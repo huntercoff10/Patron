@@ -411,16 +411,17 @@
             { id: 'm5', type: 'img', title: 'Plastic pollution ', src: '1.jpg',locked: true },
             { id: 'm7', type: 'imag', title: 'Plastic pollution', src: '1.jpg',locked: true },
             { id: 'm8', type: 'img', title: 'Plastic pollution ', src: '1.jpg',locked: true },
-            { id: 'm9', type: 'vid.', title: 'Plastic pollution ', src: '2.mp4',locked: false },
+            { id: 'm9', type: 'vid', title: 'Plastic pollution ', src: '2.mp4',locked: false },
             { id: 'm6', type: 'oth', title: 'Plastic pollution', src: 'Previous.html', locked: false}
         ];
 
         let teamData = [
-            { id: 1, name: "Aravind Swamy", institution: "Model Engineering College", age: 21, role: "Principal Systems Architecture Lead" },
-            { id: 2, name: "Meera Jasmine", institution: "St. Alberts Institute", age: 20, role: "Operations & Bio-Loops Lead" }
+            { id: 1, name: "Mammad", institution: "TTVHSS", age: 17, role: "Founder,all in all" },
+            { id: 2, name: "Snan", institution: "TTVHSS", age: 14, role: "Founder,media" }
+            { id: 3, name: "Sibn", institution: "TTVHSS", age: 10, role: "Founder,coordination" }
         ];
 
-        let relayEmail = "admin-inbox@patrons-startup.org";
+        let relayEmail ="Patron@outlook.com";
 
         // ------------------ UI NAVIGATION ------------------
         function toggleCurtain(slideUp) {
@@ -690,7 +691,7 @@
         function sendComms(e) {
             e.preventDefault();
             const msg = document.getElementById('commsMsg').value;
-            const mailto = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(relayEmail)}&body=${encodeURIComponent(msg)}&su=Patrons Comms Relay`;
+            const mailto = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(relayEmail)}&body=${encodeURIComponent(msg)}&su=Meesage for Patron`;
             window.open(mailto, '_blank');
             e.target.reset();
         }
