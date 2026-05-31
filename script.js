@@ -1,0 +1,406 @@
+// Initialize Icons
+lucide.createIcons();
+
+// ------------------ ANIMATED BACKGROUND LOGIC ------------------
+function generateSpace() {
+    const spaceBg = document.getElementById('space-bg');
+    // Stars
+    for(let i=0; i<60; i++) {
+        let star = document.createElement('div');
+        star.className = 'star';
+        star.style.width = Math.random() * 3 + 'px';
+        star.style.height = star.style.width;
+        star.style.left = Math.random() * 100 + 'vw';
+        star.style.top = Math.random() * 100 + 'vh';
+        star.style.animationDelay = Math.random() * 3 + 's';
+        spaceBg.appendChild(star);
+    }
+    // Comets
+    for(let i=0; i<5; i++) {
+        let comet = document.createElement('div');
+        comet.className = 'comet';
+        comet.style.left = Math.random() * 100 + 'vw';
+        comet.style.top = (Math.random() * 50 - 50) + 'vh';
+        comet.style.animationDelay = Math.random() * 5 + 's';
+        comet.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        spaceBg.appendChild(comet);
+    }
+}
+generateSpace();
+
+// ------------------ GLOBAL STATE ------------------
+let isAdmin = false;
+const ADMIN_PIN = "2800";
+let activeMediaCategory = 'img';
+
+let pendingMediaAction = null; // To store action if user tries to interact while locked out
+
+// ------------------ HARDCODED EMBEDDED DATA ------------------
+// Link your local storage files in the 'src' parameter here.
+let mediaData = [
+    { id: 'm1', type: 'img', title: 'Plastic pollution', src: '1.jpg', locked: true },
+    { id: 'm2', type: 'img', title: 'Plastic pollution', src: '1.jpg', locked: true },
+    { id: 'm3', type: 'img', title: 'Plastic pollution ', src: '1.jpg',locked: true },
+    { id: 'm5', type: 'img', title: 'Plastic pollution ', src: '1.jpg',locked: true },
+    { id: 'm7', type: 'imag', title: 'Plastic pollution', src: '1.jpg',locked: true },
+    { id: 'm8', type: 'img', title: 'Plastic pollution ', src: '1.jpg',locked: true },
+    { id: 'm9', type: 'vid', title: 'Plastic pollution ', src: '2.mp4',locked: false },
+    { id: 'm6', type: 'oth', title: 'Plastic pollution', src: 'Previous.html', locked: false}
+];
+
+let teamData = [
+    { id: 1, name: "Mammad", institution: "TTVHSS", age: 17, role: "Founder,all in all" },
+    { id: 2, name: "Snan", institution: "TTVHSS", age: 14, role: "Founder,media" },
+    { id: 3, name: "Sibn", institution: "TTVHSS", age: 10, role: "Founder,coordination" }
+];
+
+let relayEmail = "patron@outlook.com" ;
+
+// ------------------ UI NAVIGATION ------------------
+function toggleCurtain(slideUp) {
+    const curtain = document.getElementById('homeCurtain');
+    const nav = document.getElementById('appNavBar');
+    const header = document.getElementById('appHeader');
+    const viewport = document.getElementById('coreViewport');
+
+    if(slideUp) {
+        curtain.classList.add('curtain-up');
+        setTimeout(() => {
+            nav.classList.remove('hidden');
+            header.classList.remove('hidden');
+            viewport.classList.remove('hidden');
+            switchMainView('report');
+        }, 400); // Wait for transition
+    } else {
+        curtain.classList.remove('curtain-up');
+        nav.classList.add('hidden');
+        header.classList.add('hidden');
+        viewport.classList.add('hidden');
+    }
+}
+
+function switchMainView(viewId) {
+    ['report', 'media', 'about'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.toggle('hidden', v !== viewId);
+        const btn = document.getElementById(`nav-${v}`);
+        if(v === viewId) {
+            btn.classList.add('text-emerald-400');
+            btn.classList.remove('text-slate-500');
+        } else {
+            btn.classList.remove('text-emerald-400');
+            btn.classList.add('text-slate-500');
+        }
+    });
+    document.getElementById('coreViewport').scrollTop = 0;
+    
+    // Re-render specific views just in case
+    if(viewId === 'media') renderMediaGrid();
+    if(viewId === 'about') renderTeamData();
+}
+
+// ------------------ REPORT LOGIC ------------------
+function switchReportTab(tabId) {
+    ['overview', 'explanations', 'milestones'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabId);
+        const btn = document.getElementById(`btn-report-${t}`);
+        if(t === tabId) {
+            btn.className = "bg-emerald-500/20 text-emerald-400 text-[11px] font-mono py-2 rounded-lg font-bold uppercase transition-all";
+        } else {
+            btn.className = "text-slate-400 text-[11px] font-mono py-2 rounded-lg font-bold uppercase hover:text-emerald-300 transition-all";
+        }
+    });
+}
+
+function toggleSlab(el) {
+    const content = el.querySelector('.slab-content');
+    const indicator = el.querySelector('.slab-indicator');
+    content.classList.toggle('expanded');
+    if(content.classList.contains('expanded')) {
+        indicator.innerText = "Tap to collapse ↑";
+    } else {
+        indicator.innerText = "Tap to expand ↓";
+    }
+}
+
+// ------------------ MEDIA LOGIC (EMBEDDED) ------------------
+function switchMediaFilter(cat) {
+    activeMediaCategory = cat;
+    ['img', 'vid', 'oth'].forEach(t => {
+        const btn = document.getElementById(`flt-media-${t}`);
+        if(t === cat) {
+            btn.className = "bg-emerald-500/20 text-emerald-400 text-[11px] font-mono py-2 rounded-lg font-bold uppercase transition-all";
+        } else {
+            btn.className = "text-slate-400 text-[11px] font-mono py-2 rounded-lg font-bold uppercase hover:text-emerald-300 transition-all";
+        }
+    });
+    renderMediaGrid();
+}
+
+function renderMediaGrid() {
+    const grid = document.getElementById('mediaGrid');
+    grid.innerHTML = '';
+    
+    const filtered = mediaData.filter(m => m.type === activeMediaCategory);
+    
+    if(filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 text-center py-10 font-mono text-xs text-slate-500 uppercase tracking-widest border border-dashed border-slate-800 rounded-xl">No Database Records Found</div>`;
+        return;
+    }
+
+    filtered.forEach(asset => {
+        const card = document.createElement('div');
+        card.className = "relative bg-slate-900 rounded-xl overflow-hidden aspect-square border border-slate-800 shadow-md group select-none flex flex-col justify-end";
+        
+        let visualContent = '';
+        let overlayControls = '';
+
+        if(asset.locked) {
+            visualContent = `
+                <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-rose-500/80 z-10">
+                    <i data-lucide="lock" class="w-8 h-8 mb-2"></i>
+                    <span class="text-[9px] font-mono tracking-widest uppercase">Admin Lock</span>
+                </div>`;
+            
+            // Allow admin to unlock via icon tap if admin, or prompt pin if user
+            overlayControls = `
+                <div class="absolute bottom-2 right-2 z-20">
+                    <button onclick="handleMediaAction('${asset.id}', 'unlock')" class="bg-rose-950/80 border border-rose-800 text-rose-400 p-2 rounded-lg hover:bg-rose-900 transition-colors shadow-lg active:scale-95"><i data-lucide="unlock" class="w-4 h-4"></i></button>
+                </div>`;
+        } else {
+            if(asset.type === 'vid') {
+                visualContent = `<video src="${asset.src}" class="absolute inset-0 w-full h-full object-cover opacity-60" muted loop autoplay></video>`;
+            } else if(asset.type === 'img') {
+                visualContent = `<img src="${asset.src}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700">`;
+            } else {
+                visualContent = `<div class="absolute inset-0 flex items-center justify-center bg-slate-950 text-emerald-500/30"><i data-lucide="file-box" class="w-12 h-12"></i></div>`;
+            }
+
+            // Open lightbox for non-locked
+            const openTrigger = `onclick="openLightbox('${asset.src}', '${asset.type}', '${asset.title.replace(/'/g,"\\'")}')"`;
+
+            overlayControls = `
+                <div class="absolute inset-0 z-10 cursor-pointer" ${openTrigger}></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none z-10"></div>
+                
+                <div class="absolute top-2 right-2 z-20 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="handleMediaAction('${asset.id}', 'lock')" class="bg-slate-900/90 border border-slate-700 text-slate-300 hover:text-rose-400 p-1.5 rounded shadow-lg backdrop-blur-sm"><i data-lucide="lock" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="handleMediaAction('${asset.id}', 'delete')" class="bg-slate-900/90 border border-slate-700 text-slate-300 hover:text-red-500 p-1.5 rounded shadow-lg backdrop-blur-sm"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    <button ${openTrigger} class="bg-emerald-950/90 border border-emerald-800 text-emerald-400 p-1.5 rounded shadow-lg backdrop-blur-sm"><i data-lucide="download" class="w-3.5 h-3.5"></i></button>
+                </div>
+            `;
+        }
+
+        card.innerHTML = `
+            ${visualContent}
+            ${overlayControls}
+            <div class="relative z-10 p-2 pointer-events-none w-full">
+                <p class="text-[9px] font-mono text-white truncate w-[80%]">${asset.title}</p>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+    lucide.createIcons();
+}
+
+function handleMediaAction(id, action) {
+    if(!isAdmin) {
+        pendingMediaAction = { id, action };
+        triggerAdminLogin();
+        return;
+    }
+    
+    // Execute action if Admin
+    executeMediaAction(id, action);
+}
+
+function executeMediaAction(id, action) {
+    const index = mediaData.findIndex(m => m.id === id);
+    if(index === -1) return;
+
+    if(action === 'lock') {
+        mediaData[index].locked = true;
+    } else if(action === 'unlock') {
+        mediaData[index].locked = false;
+    } else if(action === 'delete') {
+        if(confirm("Confirm asset purge from system?")) {
+            mediaData.splice(index, 1);
+        }
+    }
+    renderMediaGrid();
+}
+
+// Lightbox Functions
+function openLightbox(src, type, title) {
+    const lb = document.getElementById('lightbox');
+    const content = document.getElementById('lightboxContent');
+    const titleEl = document.getElementById('lightboxTitle');
+    const dlBtn = document.getElementById('lightboxDownloadBtn');
+    
+    lb.classList.remove('hidden');
+    titleEl.innerText = title;
+    dlBtn.href = src;
+
+    if(type === 'vid') {
+        content.innerHTML = `<video src="${src}" class="max-w-full max-h-full rounded-xl border border-slate-700" controls autoplay></video>`;
+    } else if (type === 'img') {
+        content.innerHTML = `<img src="${src}" class="max-w-full max-h-full rounded-xl border border-slate-700 object-contain">`;
+    } else {
+        content.innerHTML = `<div class="bg-slate-900 border border-slate-700 p-10 rounded-xl text-center"><i data-lucide="file-box" class="w-16 h-16 text-emerald-500 mx-auto mb-4"></i><p class="text-xs font-mono text-slate-400">Secure Document Package</p></div>`;
+    }
+    lucide.createIcons();
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.getElementById('lightboxContent').innerHTML = '';
+}
+
+// ------------------ ABOUT/TEAM LOGIC ------------------
+function renderTeamData() {
+    const container = document.getElementById('teamContainer');
+    container.innerHTML = '';
+
+    teamData.forEach(member => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-900/40 border border-slate-800 p-4 rounded-xl flex justify-between items-center";
+        card.innerHTML = `
+            <div class="flex-1 min-w-0 pr-2">
+                <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-xs font-bold text-slate-100 truncate">${member.name}</h4>
+                    <span class="text-[9px] font-mono bg-slate-800 text-emerald-400 px-1.5 rounded-sm">Age ${member.age}</span>
+                </div>
+                <p class="text-[10px] font-mono text-emerald-500 tracking-wider uppercase font-bold truncate mb-0.5">${member.role}</p>
+                <p class="text-[9px] font-mono text-slate-400 truncate"><i data-lucide="building" class="w-2.5 h-2.5 inline mr-1 -mt-0.5"></i>${member.institution}</p>
+            </div>
+            ${isAdmin ? `
+                <div class="flex flex-col space-y-1 shrink-0 border-l border-slate-800 pl-2">
+                    <button onclick="editTeamMember(${member.id})" class="text-slate-500 hover:text-emerald-400 bg-slate-950 p-1.5 rounded border border-slate-800"><i data-lucide="edit" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="deleteTeamMember(${member.id})" class="text-slate-500 hover:text-rose-500 bg-slate-950 p-1.5 rounded border border-slate-800"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                </div>
+            ` : ''}
+        `;
+        container.appendChild(card);
+    });
+    lucide.createIcons();
+}
+
+function addTeamMember() {
+    if(!isAdmin) return;
+    const name = prompt("Enter Node/Member Name:");
+    if(!name) return;
+    const age = prompt("Enter Age Metric:");
+    const role = prompt("Enter Role Title:");
+    const institution = prompt("Enter Academic/Professional Institution:");
+    
+    teamData.push({ id: Date.now(), name, age, role, institution });
+    renderTeamData();
+}
+
+function editTeamMember(id) {
+    if(!isAdmin) return;
+    const m = teamData.find(x => x.id === id);
+    if(!m) return;
+    const n = prompt("Edit Name:", m.name);
+    if(n) { m.name = n; renderTeamData(); }
+}
+
+function deleteTeamMember(id) {
+    if(!isAdmin) return;
+    if(confirm("Remove this operational node?")) {
+        teamData = teamData.filter(x => x.id !== id);
+        renderTeamData();
+    }
+}
+
+function changeRelayEmail() {
+    if(!isAdmin) return;
+    const e = prompt("Set new Admin routing email address:", relayEmail);
+    if(e) {
+        relayEmail = e;
+        document.getElementById('targetEmailDisplay').value = relayEmail;
+    }
+}
+
+function sendComms(e) {
+    e.preventDefault();
+    const msg = document.getElementById('commsMsg').value;
+    const mailto = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(relayEmail)}&body=${encodeURIComponent(msg)}&su=Meesage for Patron`;
+    window.open(mailto, '_blank');
+    e.target.reset();
+}
+
+// ------------------ ADMIN SECURITY SYSTEM ------------------
+function triggerAdminLogin() {
+    if(isAdmin) {
+        // Logout logic
+        isAdmin = false;
+        pendingMediaAction = null;
+        updateAdminUI();
+    } else {
+        // Open PIN modal
+        document.getElementById('securityModal').classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('securityBox').classList.remove('scale-95');
+        document.getElementById('adminPinInput').focus();
+    }
+}
+
+function closeSecurityModal() {
+    document.getElementById('securityModal').classList.add('opacity-0', 'pointer-events-none');
+    document.getElementById('securityBox').classList.add('scale-95');
+    document.getElementById('adminPinInput').value = '';
+    pendingMediaAction = null;
+}
+
+function verifyPin() {
+    const input = document.getElementById('adminPinInput').value;
+    if(input === ADMIN_PIN) {
+        isAdmin = true;
+        closeSecurityModal();
+        updateAdminUI();
+        
+        // Execute any pending media action from locked state
+        if(pendingMediaAction) {
+            executeMediaAction(pendingMediaAction.id, pendingMediaAction.action);
+            pendingMediaAction = null;
+        }
+    } else {
+        alert("ACCESS DENIED: Pattern Mismatch.");
+        closeSecurityModal();
+    }
+}
+
+// Auto-submit on 4 chars
+document.getElementById('adminPinInput').addEventListener('input', (e) => {
+    if(e.target.value.length === 4) verifyPin();
+});
+
+function updateAdminUI() {
+    const badgeText = document.getElementById('adminText');
+    const badgeIndicator = document.getElementById('adminIndicator');
+    const badgeOuter = document.getElementById('adminBadge');
+    
+    const addMemBtn = document.getElementById('addMemberBtn');
+    const editRlyBtn = document.getElementById('editRelayBtn');
+
+    if(isAdmin) {
+        badgeText.innerText = "ADMIN ACTIVE";
+        badgeIndicator.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]";
+        badgeOuter.className = "flex items-center space-x-1.5 bg-emerald-950/40 border border-emerald-700 rounded-full px-3 py-1 text-[10px] font-mono tracking-wider text-emerald-400 cursor-pointer";
+        
+        addMemBtn.classList.remove('hidden');
+        editRlyBtn.classList.remove('hidden');
+    } else {
+        badgeText.innerText = "USER";
+        badgeIndicator.className = "w-1.5 h-1.5 rounded-full bg-slate-500";
+        badgeOuter.className = "flex items-center space-x-1.5 bg-slate-900 border border-slate-700 rounded-full px-3 py-1 text-[10px] font-mono tracking-wider text-slate-400 transition-colors hover:bg-slate-800 cursor-pointer";
+        
+        addMemBtn.classList.add('hidden');
+        editRlyBtn.classList.add('hidden');
+    }
+
+    // Re-render views to show/hide admin controls
+    renderMediaGrid();
+    renderTeamData();
+}
+
+
