@@ -55,12 +55,11 @@ let mediaData = [
 ];
 
 let teamData = [
-    { id: 1, name: "Mammad", institution: "TTVHSS", age: 17, role: "Founder,all in all" },
-    { id: 2, name: "Snan", institution: "TTVHSS", age: 14, role: "Founder,media" },
-    { id: 3, name: "Sibn", institution: "TTVHSS", age: 10, role: "Founder,coordination" }
+    { id: 1, name: "Muhammed", institution: "TTVHSS", age: 17, role: "Founder,all in all" },
+    { id: 2, name: "Sinan", institution: "TTVHSS", age: 14, role: "Founder,all in all" }
 ];
 
-let relayEmail = "patron@outlook.com" ;
+let relayEmail = "patron@hotmail.com" ;
 
 // ------------------ UI NAVIGATION ------------------
 function toggleCurtain(slideUp) {
@@ -330,7 +329,7 @@ function changeRelayEmail() {
 function sendComms(e) {
     e.preventDefault();
     const msg = document.getElementById('commsMsg').value;
-    const mailto = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(relayEmail)}&body=${encodeURIComponent(msg)}&su=Meesage for Patron`;
+    const mailto = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(relayEmail)}&body=${encodeURIComponent(msg)}&su=Message for Patron`;
     window.open(mailto, '_blank');
     e.target.reset();
 }
